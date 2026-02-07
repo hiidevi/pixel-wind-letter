@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Wind Letter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            color: #eee;
+            font-family: 'VT323', monospace;
+        }
+
+        #app-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            image-rendering: pixelated;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        #ui-layer {
+            position: relative;
+            z-index: 10;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #fff;
+            color: #fff;
+            padding: 10px;
+            margin-bottom: 1px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            image-rendering: pixelated;
+        }
+
+        /* input styles placeholder */
+    </style>
+</head>
+
+<body>
+    <div id="app-container">
+        <canvas id="pixel-canvas"></canvas>
+        <div id="ui-layer">
+            <!-- Creator Mode UI -->
+            <div id="creator-ui" class="visible-ui">
+                <h1 class="pixel-title">Pixel Wind Letter</h1>
+                <section class="form-container">
+                    <div class="input-group">
+                        <label for="input-from">From:</label>
+                        <input type="text" id="input-from" placeholder="Sender Name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <label for="input-to">To:</label>
+                        <input type="text" id="input-to" placeholder="Recipient Name" maxlength="20">
+                    </div>
+                    <div class="input-group">
+                        <label for="input-msg1">Letter 1:</label>
+                        <textarea id="input-msg1" placeholder="Write a short message..." maxlength="140"></textarea>
+                    </div>
+                    <div class="input-group optional">
+                        <label for="input-msg2">Letter 2 (Optional):</label>
+                        <textarea id="input-msg2" placeholder="Second page / longer message..."
+                            maxlength="280"></textarea>
+                    </div>
+                    <button id="btn-generate" class="pixel-btn">Seal Letter</button>
+                </section>
+                <div id="share-container" class="hidden">
+                    <p style="margin-top: 1rem; color: #778da9; font-size: 0.8rem;">Your letter is sealed in the wind.
+                    </p>
+                    <div class="share-box" style="display: flex; gap: 5px;">
+                        <input type="text" id="share-link" readonly>
+                        <button id="btn-copy" class="pixel-btn-small">Copy</button>
+                    </div>
+                    <button id="btn-reset" class="pixel-link"
+                        style="background: none; border: none; padding: 0; box-shadow: none; text-decoration: underline; margin-top: 10px; font-size: 0.8rem;">Write
+                        Another</button>
+                </div>
+            </div>
+
+            <!-- Reader Mode UI -->
+            <div id="reader-ui" class="visible-ui hidden">
+                <div id="letter-container">
+                    <div class="letter-content" id="letter-page-1">
+                        <p class="recipient-label" style="font-size: 1.5rem; margin-bottom: 1rem;">Dearest <span
+                                id="display-to">...</span>,</p>
+                        <p id="display-msg1" class="typewriter-text" style="line-height: 1.5; min-height: 50px;"></p>
+                        <p class="sender-label" style="text-align: right; margin-top: 1rem;">- <span
+                                id="display-from">...</span></p>
+                    </div>
+                    <div class="letter-content hidden" id="letter-page-2">
+                        <p id="display-msg2" class="fade-in-text" style="line-height: 1.5;"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
