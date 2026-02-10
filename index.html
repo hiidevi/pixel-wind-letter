@@ -97,6 +97,10 @@
                         <textarea id="input-msg2" placeholder="Second page / longer message..."
                             maxlength="280"></textarea>
                     </div>
+                    <div class="input-group optional">
+                        <label for="input-youtube">Song (YouTube Link):</label>
+                        <input type="text" id="input-youtube" placeholder="Paste YouTube URL..." maxlength="100">
+                    </div>
                     <button id="btn-generate" class="pixel-btn">Seal Letter</button>
                 </section>
                 <div id="share-container" class="hidden">
@@ -126,6 +130,10 @@
                         <p id="display-msg2" class="fade-in-text" style="line-height: 1.5;"></p>
                     </div>
                 </div>
+            </div>
+            <div id="youtube-player-container" class="hidden"></div>
+            <div id="music-controls" class="hidden">
+                <button id="btn-play-music" class="pixel-btn-small">♪ Play Music</button>
             </div>
         </div>
     </div>

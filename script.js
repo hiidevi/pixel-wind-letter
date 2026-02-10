@@ -1,6 +1,15 @@
 import { AnimationEngine } from './js/animation.js';
 import { getLetterFromURL, encodeLetter } from './js/state.js';
 
+// YouTube Helper
+function extractVideoID(url) {
+    if (!url) return false;
+    // Added support for 'shorts/'
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?)|(shorts\/))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[8].length == 11) ? match[8] : false;
+}
+
 // Init App
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Start Pixel Animation immediately
@@ -35,39 +44,101 @@ function initReaderMode(data, engine) {
     const page1 = document.getElementById('letter-page-1');
     const page2 = document.getElementById('letter-page-2');
 
-    // Initially hide Page 2 content with opacity 0 (via CSS logic or inline style)
+    // Initially hide Page 2 content with opacity 0
     page2.style.opacity = '0';
 
-    // Step 1: Wind Animation (already running)
-    // Step 2: Show Recipient Name + Page 1 content after delay
+    // YouTube Integration
+    if (data.yt) {
+        // Load YouTube IFrame API
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        let player;
+        window.onYouTubeIframeAPIReady = function () {
+            player = new YT.Player('youtube-player-container', {
+                height: '0',
+                width: '0',
+                videoId: data.yt,
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 0,
+                    'loop': 1,
+                    'playlist': data.yt
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        };
+
+        function onPlayerReady(event) {
+            event.target.playVideo();
+        }
+
+        function onPlayerStateChange(event) {
+            checkAudioState(event.target);
+        }
+
+        function checkAudioState(p) {
+            const btn = document.getElementById('btn-play-music');
+            const controls = document.getElementById('music-controls');
+
+            if (p.getPlayerState() === YT.PlayerState.PLAYING) {
+                if (p.isMuted()) {
+                    controls.classList.remove('hidden');
+                    btn.textContent = "♪ Unmute Music";
+                } else {
+                    controls.classList.add('hidden');
+                }
+            } else {
+                controls.classList.remove('hidden');
+                btn.textContent = "♪ Play Music";
+            }
+        }
+
+        // Manual Play Button
+        const btnPlay = document.getElementById('btn-play-music');
+        document.getElementById('music-controls').classList.remove('hidden');
+
+        const handlePlayParams = (e) => {
+            // Prevent ghost clicks if touch fired first
+            if (e.type === 'touchstart') e.preventDefault();
+
+            if (player) {
+                player.unMute();
+                player.setVolume(100);
+                player.playVideo();
+                setTimeout(() => checkAudioState(player), 500);
+            }
+        };
+
+        btnPlay.addEventListener('click', handlePlayParams);
+        btnPlay.addEventListener('touchstart', handlePlayParams, { passive: false });
+    }
+
+    // Sequenced Animation
     setTimeout(() => {
-        // Typewriter Effect for Msg 1
         typeText(msg1El, data.msg1 || "", 50, () => {
-            // After typing finishes... wait a bit, then transition if Msg 2 exists
             if (data.msg2 && data.msg2.trim().length > 0) {
                 setTimeout(() => {
-                    // Transition to Page 2
                     page1.style.opacity = '0'; // Fade out
                     page1.classList.add('fade-out');
 
                     setTimeout(() => {
                         page1.classList.add('hidden');
                         page2.classList.remove('hidden');
-
-                        // Trigger reflow
                         void page2.offsetWidth;
-
-                        // Fade In Page 2
                         page2.style.transition = 'opacity 2s ease-in';
                         page2.style.opacity = '1';
-
-                        // Show text immediately or type it? Let's just show it for "Page 2" feel
                         msg2El.textContent = data.msg2;
-                    }, 1000); // 1s fade out duration
-                }, 2000); // Read time delay
+                    }, 1000);
+                }, 2000);
             }
         });
-    }, 2000); // Initial "Wind Only" delay
+    }, 2000);
 }
 
 // Implementation of Typewriter Effect
@@ -80,9 +151,9 @@ function typeText(element, text, speed, callback) {
         if (i < text.length) {
             element.textContent += text.charAt(i);
             i++;
-            setTimeout(type, speed + (Math.random() * 30)); // Subtle jitter
+            setTimeout(type, speed + (Math.random() * 30));
         } else {
-            element.classList.remove('typewriter-text'); // Stop cursor blink?
+            element.classList.remove('typewriter-text');
             if (callback) callback();
         }
     }
@@ -95,30 +166,38 @@ function initCreatorMode(engine) {
     const shareContainer = document.getElementById('share-container');
     const shareLinkInput = document.getElementById('share-link');
     const btnCopy = document.getElementById('btn-copy');
-    const btnReset = document.getElementById('btn-reset'); // Fix ID reference
+    const btnReset = document.getElementById('btn-reset');
 
     btnGenerate.addEventListener('click', () => {
         const to = document.getElementById('input-to').value.trim();
         const from = document.getElementById('input-from').value.trim();
         const msg1 = document.getElementById('input-msg1').value.trim();
         const msg2 = document.getElementById('input-msg2').value.trim();
+        const ytUrl = document.getElementById('input-youtube').value.trim();
 
         if (!to || !from || !msg1) {
             alert("Please fill in the required fields (To, From, Letter 1).");
             return;
         }
 
-        // Generate Data Payload
+        let ytId = null;
+        if (ytUrl) {
+            ytId = extractVideoID(ytUrl);
+            if (!ytId) {
+                alert("Invalid YouTube URL. Please use a standard video link, shorts link, or share link.");
+                return;
+            }
+        }
+
         const data = {
             to,
             from,
             msg1,
             msg2,
+            yt: ytId,
             seed: Math.random()
         };
 
-        // Create Encoded URL
-        // Encode the Hash component
         const hash = encodeLetter(data);
         const safeHash = encodeURIComponent(hash);
         const url = `${window.location.origin}${window.location.pathname}?l=${safeHash}`;
@@ -146,6 +225,7 @@ function initCreatorMode(engine) {
             document.getElementById('input-from').value = "";
             document.getElementById('input-msg1').value = "";
             document.getElementById('input-msg2').value = "";
+            document.getElementById('input-youtube').value = "";
         });
     }
 }
